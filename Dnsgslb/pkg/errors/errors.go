@@ -25,6 +25,7 @@ var (
 	ErrHostUnreach		=	StandardError{1008, "HostUnreach"}
 	ErrHttpTimeout		= 	StandardError{1009, "HttpConnectedTimeout"}
 	ErrHttpRefused		=	StandardError{1010, "Target host refused it"}
+	ErrJsonUnmarshal	=	StandardError{1011, "JsonUnmarshal fail"}
 )
 
 

@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"net/http"
+
 	"fmt"
-	"encoding/json"
+
 	"os"
 	"net"
 	"strconv"
 	"time"
-	"io/ioutil"
+
 )
 
 type PingOption struct{
@@ -27,47 +27,12 @@ func NewPingOption()*PingOption{
 	}
 }
 
-type Icmpcheck struct {
-	Type 		string `json:"type"`
-	Ip 			string	`json:"ip"`
-	Interval	int	`json:"interval"`
-	Timeout 	int	`json:"timeout"`
-	Fall 		int	`json:"fall"`
-	Rise 		int	`json:"rise"`
-}
-
-func Sendicmp(w http.ResponseWriter, r *http.Request) {
-	// 接受前端http请求的json参数
-	body, _ := ioutil.ReadAll(r.Body)
-	str := []byte(body)
-	c := Icmpcheck{}
-	// 解析json,将数据放在结构体中
-	err := json.Unmarshal(str, &c)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(c.Ip)
-	fmt.Println(string(body))
-	// 开始ping
-	argsmap:=map[string]interface{}{}
-	p:=NewPingOption()
-	for range time.Tick(time.Duration(c.Interval) * time.Second){
-		p.ping(c.Ip,argsmap)
-	}
-
-}
-
-//func main(){
-//	argsmap:=map[string]interface{}{}
-//	p:=NewPingOption()
-//	p.ping3("127.0.0.1",argsmap)
-//}
 
 //ping连接用的协议是ICMP，原理：
 //Ping的基本原理是发送和接受ICMP请求回显报文。接收方将报文原封不动的返回发送方，发送方校验报文，校验成功则表示ping通。
 //一台主机向一个节点发送一个类型字段值为8的ICMP报文，如果途中没有异常（如果没有被路由丢弃，目标不回应ICMP或者传输失败），
 //则目标返回类型字段值为0的ICMP报文，说明这台主机可达
-func (p *PingOption)ping(host string, args map[string]interface{}) {
+func (p *PingOption)IcmpCheck(host string, args map[string]interface{}) bool {
 	//要发送的回显请求数
 	var count int = 1
 	//要发送缓冲区大小,单位：字节
@@ -78,7 +43,6 @@ func (p *PingOption)ping(host string, args map[string]interface{}) {
 	var neverstop bool = false
 	// 机器健康状态
 	var status bool = false
-	fmt.Println(args,"args")
 	if len(args) != 0{
 		count = args["n"].(int)
 		size = args["l"].(int)
@@ -92,8 +56,6 @@ func (p *PingOption)ping(host string, args map[string]interface{}) {
 	//此处的链接conn只是为了获得ip := conn.RemoteAddr(),显示出来，因为后面每次连接都会重新获取conn,todo 但是每次重新获取的conn,其连接的ip保证一致么？
 	conn, err := net.DialTimeout("ip4:icmp", host, time.Duration(timeout*1000*1000))
 	//每个域名可能对应多个ip，但实际连接时，请求只会转发到某一个上，故需要获取实际连接的远程ip，才能知道实际ping的机器是哪台
-	//  ip := conn.RemoteAddr()
-	//  fmt.Println("正在 Ping " + cname + " [" + ip.String() + "] 具有 32 字节的数据:")
 
 	var seq int16 = 1
 	id0, id1 := genidentifier3(host)
@@ -196,7 +158,7 @@ func (p *PingOption)ping(host string, args map[string]interface{}) {
 	fmt.Println(status)
 	//stat3(ip.String(), sendN, lostN, recvN, shortT, longT, sumT)
 	stat3(host, sendN, lostN, recvN, shortT, longT, sumT)
-
+	return status
 }
 
 func checkSum3(msg []byte) uint16 {

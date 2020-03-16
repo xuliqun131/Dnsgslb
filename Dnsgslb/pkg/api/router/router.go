@@ -17,24 +17,45 @@ var Routers []Route
 
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
+
+	router.HandleFunc("/domain", handlers.ListDomain).Methods("GET")
+	router.HandleFunc("/domain/{domain}", handlers.AddDomain).Methods("POST")
+	router.HandleFunc("/domain/{domain}", handlers.DeleteDomain).Methods("DELETE")
+	router.HandleFunc("/domain/{domain}", handlers.UpdateDoamin).Methods("PUT")
+
+	router.HandleFunc("/content", handlers.ListContent).Methods("GET")
+	router.HandleFunc("/content/{content}", handlers.AddContent).Methods("POST")
+	router.HandleFunc("/content/{content}", handlers.DeleteContent).Methods("DELETE")
+	router.HandleFunc("/content/{content}", handlers.UpdateContent).Methods("PUT")
+
+	router.HandleFunc("/monitors", handlers.SelectMonitors).Methods("GET")
+	router.HandleFunc("/monitor", handlers.ListMonitors).Methods("GET")
+	router.HandleFunc("/monitor", handlers.AddMonitors).Methods("POST")
+	router.HandleFunc("/monitor/{monitor}", handlers.DeleteMonitors).Methods("DELETE")
+	router.HandleFunc("/monitor/{monitor}", handlers.UpdateMonitors).Methods("PUT")
+
+	router.HandleFunc("/type", handlers.ListType).Methods("GET")
+	router.HandleFunc("/type", handlers.AddType).Methods("POST")
+	router.HandleFunc("/type/{type}", handlers.DeleteType).Methods("DELETE")
+	router.HandleFunc("/type/{type}", handlers.UpdateType).Methods("PUT")
+
+	router.HandleFunc("/name", handlers.ListName).Methods("GET")
+	router.HandleFunc("/name", handlers.AddName).Methods("POST")
+	router.HandleFunc("/name/{name}", handlers.DeleteName).Methods("DELETE")
+	router.HandleFunc("/name/{name}", handlers.UpdateName).Methods("PUT")
+
+	router.HandleFunc("/view", handlers.ListView).Methods("GET")
+	router.HandleFunc("/view", handlers.AddView).Methods("POST")
+	router.HandleFunc("/view/{view}", handlers.DeleteView).Methods("DELETE")
+	router.HandleFunc("/view/{view}", handlers.UpdateView).Methods("PUT")
+
 	router.HandleFunc("/records", handlers.AddRecords).Methods("POST")
 	router.HandleFunc("/records", handlers.ListRecords).Methods("GET")
-	router.HandleFunc("/records/{args}", handlers.DeleteRecords).Methods("DELETE")
-	router.HandleFunc("/records", handlers.UpdateRecords).Methods("PUT")
-	router.HandleFunc("/sendicmp", handlers.Sendicmp).Methods("POST")
-	router.HandleFunc("/sendtcp", handlers.Sendtcp).Methods("POST")
-	router.HandleFunc("/sendhttp", handlers.Sendhttp).Methods("POST")
+	router.HandleFunc("/records/{recordsId}", handlers.SelectRecords).Methods("GET")
+	router.HandleFunc("/records/{recordsId}", handlers.DeleteRecords).Methods("DELETE")
+	router.HandleFunc("/records/{recordsId}", handlers.UpdateRecords).Methods("PUT")
 
-	//
-	//for _, route := range Routers {
-	//	var handler http.Handler
-	//	handler = route.HandlerFunc
-	//	router.
-	//		Methods(route.Method).
-	//		Path(route.Pattern).
-	//		Name(route.Name).
-	//		Handler(handler)
-	//}
+
 	return router
 }
 
