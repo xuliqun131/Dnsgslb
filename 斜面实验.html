@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>斜面坡度与省力关系虚拟实验</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .experiment-area {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .control-panel {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .canvas-container {
+            flex: 2;
+            text-align: center;
+        }
+        
+        canvas {
+            border: 3px solid #dee2e6;
+            border-radius: 10px;
+            background: white;
+        }
+        
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #495057;
+            font-size: 1.1em;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        .angle-display {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        
+        .force-display {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .force-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #155724;
+        }
+        
+        .chart-container {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .physics-info {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .physics-info h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .physics-info p {
+            margin: 5px 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>斜面坡度与省力关系虚拟实验</h1>
+        <p class="subtitle">探索斜面与地面夹角如何影响提升重物所需的拉力</p>
+        
+        <div class="experiment-area">
+            <div class="control-panel">
+                <div class="slider-container">
+                    <label for="angleSlider">斜面与地面夹角 (度):</label>
+                    <input type="range" id="angleSlider" min="0" max="45" value="0" step="1">
+                    <div class="angle-display" id="angleDisplay">0°</div>
+                </div>
+                
+                <div class="force-display">
+                    <div>沿斜面向上的拉力:</div>
+                    <div class="force-value" id="forceDisplay">0.00 N</div>
+                </div>
+                
+                <div class="physics-info">
+                    <h3>物理原理</h3>
+                    <p>木块重量: 10 N</p>
+                    <p>斜面角度: θ (与地面的夹角)</p>
+                    <p>沿斜面向上拉力: F = mg·sin(θ)</p>
+                    <p>当θ = 0°时，F = 0 N (水平面，无需拉力)</p>
+                    <p>当θ = 45°时，F = 7.07 N (最大角度)</p>
+                </div>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas id="physicsCanvas" width="400" height="300"></canvas>
+                <div style="margin-top: 15px; font-size: 1.1em; color: #666;">
+                    斜面受力示意图
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h3 style="text-align: center; margin-bottom: 20px; color: #495057;">不同角度下的拉力对比</h3>
+            <canvas id="forceChart" width="800" height="300"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        const angleSlider = document.getElementById('angleSlider');
+        const angleDisplay = document.getElementById('angleDisplay');
+        const forceDisplay = document.getElementById('forceDisplay');
+        const physicsCanvas = document.getElementById('physicsCanvas');
+        const ctx = physicsCanvas.getContext('2d');
+        
+        // 物理常量
+        const mass = 1; // kg (10N = 1kg * 10m/s²)
+        const gravity = 10; // m/s²
+        const weight = mass * gravity; // 10N
+        
+        // 图表数据存储
+        let chartData = [];
+        
+        // 初始化图表
+        const chartCtx = document.getElementById('forceChart').getContext('2d');
+        const forceChart = new Chart(chartCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: '所需拉力 (N)',
+                    data: [],
+                    backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        title: {
+                            display: true,
+                            text: '拉力 (N)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: '斜面与地面夹角 (度)'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '斜面与地面夹角与所需拉力的关系'
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // 计算拉力
+        function calculateForce(angle) {
+            const angleRad = angle * Math.PI / 180;
+            return weight * Math.sin(angleRad);
+        }
+        
+        // 绘制物理图
+        function drawPhysics(angle) {
+            ctx.clearRect(0, 0, physicsCanvas.width, physicsCanvas.height);
+            
+            const angleRad = angle * Math.PI / 180;
+            const canvasWidth = physicsCanvas.width;
+            const canvasHeight = physicsCanvas.height;
+            
+            // 斜面参数 - 按照图片样式设计
+            const triangleBase = 180; // 底边长度
+            const triangleHeight = triangleBase * Math.tan(angleRad); // 高度
+            const triangleHypotenuse = triangleBase / Math.cos(angleRad); // 斜边长度
+            
+            // 三角形顶点坐标
+            const bottomLeftX = 80; // 左下角
+            const bottomLeftY = canvasHeight - 100; // 左下角
+            const bottomRightX = bottomLeftX + triangleBase; // 右下角
+            const bottomRightY = bottomLeftY; // 右下角
+            const topX = bottomLeftX; // 左上角
+            const topY = bottomLeftY - triangleHeight; // 左上角
+            
+            // 绘制直角三角形斜面（三条蓝色线条）
+            ctx.strokeStyle = '#0066cc';
+            ctx.lineWidth = 4;
+            
+            // 底边（水平）
+            ctx.beginPath();
+            ctx.moveTo(bottomLeftX, bottomLeftY);
+            ctx.lineTo(bottomRightX, bottomRightY);
+            ctx.stroke();
+            
+            // 垂直边
+            ctx.beginPath();
+            ctx.moveTo(bottomLeftX, bottomLeftY);
+            ctx.lineTo(topX, topY);
+            ctx.stroke();
+            
+            // 斜边
+            ctx.beginPath();
+            ctx.moveTo(topX, topY);
+            ctx.lineTo(bottomRightX, bottomRightY);
+            ctx.stroke();
+            
+            // 计算木块位置（平放在斜面线上）
+            const blockSize = 24;
+            const rampProgress = 0.7; // 木块在斜面上的位置（0.7表示在上部）
+            
+            // 计算木块在斜面上的位置
+            const blockCenterX = topX + (bottomRightX - topX) * rampProgress;
+            const blockCenterY = topY + (bottomRightY - topY) * rampProgress;
+            
+            // 计算斜面角度和垂直偏移
+            const rampAngle = Math.atan2(bottomRightY - topY, bottomRightX - topX);
+            const perpendicularOffset = blockSize / 2; // 垂直于斜面向上偏移
+            
+            // 计算木块实际位置（向垂直斜面方向偏移，使其平放在斜面上方）
+            const blockX = blockCenterX + perpendicularOffset * Math.sin(rampAngle);
+            const blockY = blockCenterY - perpendicularOffset * Math.cos(rampAngle);
+            
+            // 保存当前状态
+            ctx.save();
+            
+            // 移动到木块位置并旋转画布
+            ctx.translate(blockX, blockY);
+            ctx.rotate(rampAngle);
+            
+            // 绘制木块（黄色矩形，以中心为基准）
+            ctx.fillStyle = '#ffcc00';
+            ctx.fillRect(-blockSize/2, -blockSize/2, blockSize, blockSize);
+            ctx.strokeStyle = '#cc9900';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-blockSize/2, -blockSize/2, blockSize, blockSize);
+            
+            // 恢复画布状态
+            ctx.restore();
+            
+            // 绘制拉力矢量（红色箭头，严格与斜面平行）
+            if (angle > 0) {
+                const forceLength = 45;
+                const forceStartX = blockX;
+                const forceStartY = blockY;
+                
+                // 计算沿斜面向上的方向向量
+                const rampDX = bottomRightX - topX;
+                const rampDY = bottomRightY - topY;
+                const rampLength = Math.sqrt(rampDX * rampDX + rampDY * rampDY);
+                const unitDX = -rampDX / rampLength; // 负号表示向上
+                const unitDY = -rampDY / rampLength; // 负号表示向上
+                
+                const forceEndX = forceStartX + unitDX * forceLength;
+                const forceEndY = forceStartY + unitDY * forceLength;
+                
+                // 绘制拉力箭头
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(forceStartX, forceStartY);
+                ctx.lineTo(forceEndX, forceEndY);
+                ctx.stroke();
+                
+                // 绘制箭头头部
+                ctx.fillStyle = '#ff0000';
+                const arrowSize = 10;
+                const arrowAngle1 = Math.atan2(unitDY, unitDX) + Math.PI * 0.8;
+                const arrowAngle2 = Math.atan2(unitDY, unitDX) - Math.PI * 0.8;
+                
+                ctx.beginPath();
+                ctx.moveTo(forceEndX, forceEndY);
+                ctx.lineTo(forceEndX + arrowSize * Math.cos(arrowAngle1), 
+                           forceEndY + arrowSize * Math.sin(arrowAngle1));
+                ctx.lineTo(forceEndX + arrowSize * Math.cos(arrowAngle2), 
+                           forceEndY + arrowSize * Math.sin(arrowAngle2));
+                ctx.closePath();
+                ctx.fill();
+                
+                // 添加F拉标签
+                ctx.fillStyle = '#333';
+                ctx.font = '14px Arial';
+                ctx.fillText('F拉', forceEndX - 15, forceEndY - 10);
+            }
+            
+            // 绘制角度标注（在右下角）
+            if (angle > 0) {
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 2;
+                const arcRadius = 25;
+                
+                // 角度弧线
+                ctx.beginPath();
+                ctx.arc(bottomRightX, bottomRightY, arcRadius, -angleRad, 0);
+                ctx.stroke();
+                
+                // 角度文字
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.fillText(`${angle}°`, bottomRightX - 35, bottomRightY - 15);
+            }
+        }
+        
+        // 更新图表数据
+        function updateChart(angle, force) {
+            // 检查是否已存在该角度的数据
+            const existingIndex = chartData.findIndex(item => item.angle === angle);
+            
+            if (existingIndex !== -1) {
+                chartData[existingIndex].force = force;
+            } else {
+                chartData.push({ angle, force });
+                chartData.sort((a, b) => a.angle - b.angle);
+            }
+            
+            // 更新图表
+            forceChart.data.labels = chartData.map(item => `${item.angle}°`);
+            forceChart.data.datasets[0].data = chartData.map(item => item.force.toFixed(2));
+            forceChart.update();
+        }
+        
+        // 滑块事件监听
+        angleSlider.addEventListener('input', function() {
+            const angle = parseFloat(this.value);
+            const force = calculateForce(angle);
+            
+            // 更新显示
+            angleDisplay.textContent = `${angle}°`;
+            forceDisplay.textContent = `${force.toFixed(2)} N`;
+            
+            // 更新物理图
+            drawPhysics(angle);
+            
+            // 更新图表
+            updateChart(angle, force);
+        });
+        
+        // 初始化
+        drawPhysics(0);
+        updateChart(0, 0);
+        
+        // 添加一些预设角度按钮
+        const presetAngles = [10, 20, 30, 45];
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.marginTop = '20px';
+        buttonContainer.style.textAlign = 'center';
+        
+        presetAngles.forEach(angle => {
+            const button = document.createElement('button');
+            button.textContent = `${angle}°`;
+            button.style.margin = '5px';
+            button.style.padding = '8px 16px';
+            button.style.border = 'none';
+            button.style.borderRadius = '5px';
+            button.style.backgroundColor = '#3498db';
+            button.style.color = 'white';
+            button.style.cursor = 'pointer';
+            button.style.fontSize = '14px';
+            
+            button.addEventListener('click', () => {
+                angleSlider.value = angle;
+                angleSlider.dispatchEvent(new Event('input'));
+            });
+            
+            buttonContainer.appendChild(button);
+        });
+        
+        document.querySelector('.control-panel').appendChild(buttonContainer);
+    </script>
+</body>
+</html>
