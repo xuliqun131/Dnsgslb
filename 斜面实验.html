@@ -155,7 +155,7 @@
 <body>
     <div class="container">
         <h1>斜面坡度与省力关系虚拟实验</h1>
-        <p class="subtitle">探索斜面与地面夹角如何影响提升重物所需的拉力</p>
+        <p class="subtitle">探索斜面与地面夹角如何影响斜面长度和提升重物所需的拉力</p>
         
         <div class="experiment-area">
             <div class="control-panel">
@@ -173,15 +173,16 @@
                 <div class="physics-info">
                     <h3>物理原理</h3>
                     <p>木块重量: 10 N</p>
+                    <p>斜面高度: 固定不变</p>
                     <p>斜面角度: θ (与地面的夹角)</p>
+                    <p>斜面长度: L = h/sin(θ)</p>
                     <p>沿斜面向上拉力: F = mg·sin(θ)</p>
-                    <p>当θ = 0°时，F = 0 N (水平面，无需拉力)</p>
-                    <p>当θ = 45°时，F = 7.07 N (最大角度)</p>
+                    <p>角度越大，斜面越长，但拉力越大</p>
                 </div>
             </div>
             
             <div class="canvas-container">
-                <canvas id="physicsCanvas" width="400" height="300"></canvas>
+                <canvas id="physicsCanvas" width="600" height="350"></canvas>
                 <div style="margin-top: 15px; font-size: 1.1em; color: #666;">
                     斜面受力示意图
                 </div>
@@ -245,7 +246,7 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: '斜面与地面夹角与所需拉力的关系'
+                        text: '斜面与地面夹角对斜面长度和所需拉力的影响'
                     },
                     legend: {
                         display: false
@@ -268,18 +269,30 @@
             const canvasWidth = physicsCanvas.width;
             const canvasHeight = physicsCanvas.height;
             
-            // 斜面参数 - 按照图片样式设计
-            const triangleBase = 180; // 底边长度
-            const triangleHeight = triangleBase * Math.tan(angleRad); // 高度
-            const triangleHypotenuse = triangleBase / Math.cos(angleRad); // 斜边长度
+            // 斜面参数 - 高度固定，根据角度调整长度
+            const fixedHeight = 120; // 固定高度
+            const margin = 60; // 边距
             
-            // 三角形顶点坐标
-            const bottomLeftX = 80; // 左下角
-            const bottomLeftY = canvasHeight - 100; // 左下角
+            // 计算底边长度 - 完全根据角度计算，不设上限
+            let triangleBase;
+            if (angle === 0) {
+                triangleBase = 400; // 水平时显示一个较长的长度
+            } else {
+                triangleBase = fixedHeight / Math.tan(angleRad);
+                // 移除长度限制，让夹角完全跟随角度变化
+            }
+            
+            const triangleHeight = fixedHeight; // 高度固定
+            
+            // 三角形顶点坐标 - 左对齐显示（保持左边高度不变）
+            const leftMargin = margin;
+            const bottomY = canvasHeight - margin;
+            const bottomLeftX = leftMargin; // 左下角 - 固定左边位置
+            const bottomLeftY = bottomY; // 左下角
             const bottomRightX = bottomLeftX + triangleBase; // 右下角
-            const bottomRightY = bottomLeftY; // 右下角
-            const topX = bottomLeftX; // 左上角
-            const topY = bottomLeftY - triangleHeight; // 左上角
+            const bottomRightY = bottomY; // 右下角
+            const topX = bottomLeftX; // 左上角 - 保持左边不变
+            const topY = bottomY - triangleHeight; // 左上角 - 高度固定
             
             // 绘制直角三角形斜面（三条蓝色线条）
             ctx.strokeStyle = '#0066cc';
@@ -395,7 +408,7 @@
                 // 角度文字
                 ctx.fillStyle = '#666';
                 ctx.font = '16px Arial';
-                ctx.fillText(`${angle}°`, bottomRightX - 35, bottomRightY - 15);
+                ctx.fillText(`${angle}°`, bottomRightX - 40, bottomRightY - 20);
             }
         }
         
